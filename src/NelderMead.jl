@@ -180,6 +180,7 @@ function solve(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
         xtol_abs, xtol_rel, ftol_abs, ftol_rel, stopval)
     end
   end
+
   iters == maxiters && (returncode = :MAXITERS_REACHED)
   best = bestvertex(s)
   return value(best), position(best), returncode, iters
