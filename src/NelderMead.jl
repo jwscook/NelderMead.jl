@@ -160,7 +160,7 @@ function solve(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
         returncode = :ENDLESS_LOOP
         break
       end
-      history[2:end-1] .= history[2:end-1]
+      history .= circshift(history, 1)
       history[1] = reflected
 
       if best <= reflected < secondworst
