@@ -34,8 +34,8 @@ Find minimum of function, `f`, first creating a `2 .* prod(gridsize)` Simplices
 within a hyper-rectangle spanning from `lower` to `upper`, and
 options passed in via kwargs.
 """
-function solve(f::T, lower::AbstractVector{U}, upper::AbstractVector{U},
-    gridsize::AbstractVector{<:Integer}; kwargs...) where {T<:Function, U<:Number}
+function solve(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
+    gridsize::AbstractVector{<:Integer}; kwargs...) where {F<:Function, T<:Number}
 
   all(gridsize .> 0) || throw(ArgumentError("gridsize, $gridsize, must .> 0"))
   if !(length(lower) == length(upper) == length(gridsize))
@@ -54,21 +54,24 @@ function solve(f::T, lower::AbstractVector{U}, upper::AbstractVector{U},
     x = index2position(index)
     index2values[index] = f(x)
   end
-  simplices = Set{Simplex}()
+  U = typeof(first(index2values)[2])
+  simplices = Set{Simplex{T, U}}()
   function generatesimplices!(simplices, direction)
     for ii ∈ CartesianIndices(Tuple(((gridsize .+ 1) .* ones(Int, dim))))
-      vertices = Vector{Vector{U}}()
+      vertices = Vector{Vertex{T, U}}()
       index = collect(Tuple(ii))
       for i ∈ 1:dim + 1
         vertexindex = [index[j] + ((j == i) ? direction : 0) for j ∈ 1:dim]
         all(1 .<= vertexindex .<= gridsize .+ 1) || continue
-        vertex = index2position(vertexindex)
+        vertex = Vertex{T, U}(index2position(vertexindex),
+                              index2values[vertexindex])
         push!(vertices, vertex)
       end
       length(vertices) != dim + 1 && continue
-      push!(simplices, Simplex(f, vertices))
+      push!(simplices, Simplex(vertices))
     end
   end
+
   totaltime += @elapsed generatesimplices!(simplices, 1)
   totaltime += @elapsed generatesimplices!(simplices, -1)
   @assert length(simplices) == 2 * prod(gridsize)
@@ -132,11 +135,8 @@ function solve(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
   function shrink!(s::Simplex)
     lengthbefore = length(s)
     best = bestvertex(s)
-    newvertices = [Vertexlocal(best, -δ, v) for v ∈ s if !≡(v, best)]
-    removelist = [v for v ∈ s if !≡(v, best)]
-    for d ∈ removelist, v ∈ s
-      ≡(d, v) && remove!(s, v)
-    end
+    newvertices = [Vertexlocal(best, -δ, v) for v ∈ s if !isequal(v, best)]
+    remove!(s, findall(v->!isequal(v, best), s.vertices))
     push!(s, newvertices...)
     sort!(s, by=v->value(v))
     @assert length(s) == lengthbefore

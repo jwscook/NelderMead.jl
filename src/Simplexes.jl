@@ -1,5 +1,9 @@
 struct Simplex{T<:Number, U}
   vertices::Vector{Vertex{T,U}}
+  function Simplex(vertices::Vector{Vertex{T,U}}) where {T<:Number, U}
+    sort!(vertices, by=value)
+    return new{T,U}(vertices)
+  end
 end
 function Simplex(f::T, ic::AbstractVector{U}, initial_step::AbstractVector{V}
     ) where {T<:Function, U<:Number, V<:Number}
@@ -26,23 +30,25 @@ function Simplex(f::T, positions::U
   vertices = Vector{typeof(vertex)}()
   push!(vertices, vertex)
   map(i->push!(vertices, Vertex(positions[i], f(positions[i]))), 2:dim+1)
-  sort!(vertices, by=v->value(v))
   return Simplex(vertices)
 end
 
 
-import Base.length, Base.iterate, Base.push!, Base.iterate, Base.getindex
-import Base.eachindex, Base.sort!
+import Base: length, iterate, push!, iterate, getindex
+import Base: eachindex, sort!, hash
 Base.length(s::Simplex) = length(s.vertices)
 Base.push!(s::Simplex, v::Vertex) = push!(s.vertices, v)
 Base.iterate(s::Simplex) = iterate(s.vertices)
 Base.iterate(s::Simplex, counter) = iterate(s.vertices, counter)
 Base.getindex(s::Simplex, index) = s.vertices[index]
 Base.sort!(s::Simplex; kwargs...) = sort!(s.vertices; kwargs...)
+Base.hash(s::Simplex) = hash(s, hash(:Simplex))
+Base.hash(s::Simplex, h::UInt64) = hash(hash.(s), h)
 
 dimensionality(s::Simplex) = length(s) - 1
 
 remove!(s::Simplex, v::Vertex) = filter!(x -> !≡(x, v), s.vertices)
+remove!(s::Simplex, x::Vector) = deleteat!(s.vertices, x)
 
 function getvertex(s::Simplex, i::Int)
   @assert 1 <= i <= length(s)
@@ -72,24 +78,18 @@ end
 function assessconvergence(simplex, xtol_abs, xtol_rel, ftol_abs, ftol_rel, stopval)
   value(bestvertex(simplex)) <= stopval && return :STOPVAL_REACHED
 
-  toprocess = Set{Int}(1)
-  processed = Set{Int}()
-  while !isempty(toprocess)
-    vi = pop!(toprocess)
-    v = getvertex(simplex, vi)
-    connectedto = Set{Int}()
-    for (qi, q) ∈ enumerate(simplex)
+  allxtol = true
+  for (vi, v) ∈ enumerate(simplex)
+    for qi ∈ vi+1:length(simplex)
+      q = getvertex(simplex, qi)
       thisxtol = true
       for (i, (pv, pq)) ∈ enumerate(zip(position(v), position(q)))
         thisxtol &= isapprox(pv, pq, rtol=xtol_rel[i], atol=xtol_abs[i])
       end
-      thisxtol && push!(connectedto, qi)
-      thisxtol && for i in connectedto if i ∉ processed push!(toprocess, i) end end
+      allxtol &= thisxtol
     end
-    push!(processed, vi)
   end
-  allxtol = all(i ∈ processed for i ∈ 1:length(simplex))
-  allxtol && return :XTOL_REACHED
+  allxtol && return :FTOL_REACHED
 
   allftol = true
   for (vi, v) ∈ enumerate(simplex)
