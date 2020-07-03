@@ -4,37 +4,37 @@ include("Vertexes.jl")
 include("Simplexes.jl")
 
 """
-    solve(f, initial_vertex_positions; kwargs...)
+    optimise(f, initial_vertex_positions; kwargs...)
 
 Find minimum of function, `f`, first creating a Simplex from vertices at
 `initial_vertex_positions`, and options passed in via kwargs.
 """
-function solve(f::T, initial_vertex_positions::U; kwargs...
+function optimise(f::T, initial_vertex_positions::U; kwargs...
    ) where {T<:Function, W<:Number, V<:AbstractVector{W}, U<:AbstractVector{V}}
-  return solve(f, Simplex(f, initial_vertex_positions); kwargs...)
+  return optimise(f, Simplex(f, initial_vertex_positions); kwargs...)
 end
 
 """
-    solve(f, initial_positions, initial_step; kwargs...)
+    optimise(f, initial_positions, initial_step; kwargs...)
 
 Find minimum of function, `f`, first creating a Simplex using a starting
 vertex position, `initial_position`, and other vertices `initial_step` away from
 that point in all directions, and options passed in via kwargs.
 """
-function solve(f::T, initial_position::AbstractVector{U},
+function optimise(f::T, initial_position::AbstractVector{U},
                initial_step::AbstractVector{V}; kwargs...
                ) where {T<:Function, U<:Number, V<:Number}
-  return solve(f, Simplex(f, initial_position, initial_step); kwargs...)
+  return optimise(f, Simplex(f, initial_position, initial_step); kwargs...)
 end
 
 """
-    solve(f, lower, upper, gridsize; kwargs...)
+    optimise(f, lower, upper, gridsize; kwargs...)
 
 Find minimum of function, `f`, first creating a `2 .* prod(gridsize)` Simplices
 within a hyper-rectangle spanning from `lower` to `upper`, and
 options passed in via kwargs.
 """
-function solve(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
+function optimise(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
     gridsize::AbstractVector{<:Integer}; kwargs...) where {F<:Function, T<:Number}
 
   all(gridsize .> 0) || throw(ArgumentError("gridsize, $gridsize, must .> 0"))
@@ -75,12 +75,12 @@ function solve(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
   totaltime += @elapsed generatesimplices!(simplices, 1)
   totaltime += @elapsed generatesimplices!(simplices, -1)
   @assert length(simplices) == 2 * prod(gridsize)
-  totaltime += @elapsed solutions = map(s->solve(f, s; kwargs...), collect(simplices))
+  totaltime += @elapsed solutions = map(s->optimise(f, s; kwargs...), collect(simplices))
   return solutions
 end
 
 """
-    solve(f, s; kwargs...)
+    optimise(f, s; kwargs...)
 
 Find minimum of function, `f`, starting from Simplex, `s`, with options
 passed in via kwargs.
@@ -104,7 +104,7 @@ algorithm
 -  γ (default 2): Expansion factor
 -  δ (default 0.5): Shrinkage factor
 """
-function solve(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
+function optimise(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
   kwargs = Dict(kwargs)
   stopval = get(kwargs, :stopval, sqrt(eps()))
   xtol_abs = get(kwargs, :xtol_abs, zeros(T)) .* ones(Bool, dimensionality(s))
@@ -184,6 +184,6 @@ function solve(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
   iters == maxiters && (returncode = :MAXITERS_REACHED)
   best = bestvertex(s)
   return value(best), position(best), returncode, iters
-end # solve
+end # optimise
 
 end
