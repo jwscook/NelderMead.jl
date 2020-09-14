@@ -2,6 +2,7 @@ struct Vertex{T, U<:Real}
   position::AbstractVector{T}
   value::U
 end
+Vertex(x::AbstractVector{T}, f::F) where {T, F<:Function} = Vertex(x, f(x))
 value(v::Vertex) = v.value
 position(v::Vertex) = v.position
 
@@ -12,6 +13,7 @@ Base.isless(a::Vertex, b::Vertex) = value(a) < value(b)
 Base.:<=(a::Vertex, b::Vertex) = value(a) <= value(b)
 Base.:>=(a::Vertex, b::Vertex) = value(a) >= value(b)
 Base.:+(a::Vertex, b) = position(a) .+ b
+Base.:-(a::Vertex, b) = position(a) .- b
 Base.:-(a::Vertex, b::Vertex) = position(a) .- position(b)
 function Base.isequal(a::Vertex, b::Vertex)
   values_equal = value(a) == value(b) || (isnan(a) && isnan(b))

@@ -123,19 +123,10 @@ function optimise(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real,
   @assert γ > 1 "$γ > 1"
   @assert γ > α "$γ > $α"
 
-  function Vertexlocal(centroid::Vertex{T, U}, ϵ::Number, other::Vertex{T, U}
-      ) where {T, U}
-    x = centroid + ϵ * (centroid - other)
-    return Vertex(x, f(x))
-  end
-  reflect(centroid, other) = Vertexlocal(centroid, α, other)
-  expand(centroid, other) = Vertexlocal(centroid, -γ, other)
-  contract(centroid, other) = Vertexlocal(centroid, -β, other)
-
   function shrink!(s::Simplex)
     lengthbefore = length(s)
     best = bestvertex(s)
-    newvertices = [Vertexlocal(best, -δ, v) for v ∈ s if !isequal(v, best)]
+    newvertices = [Vertex(best - δ * (best - v), f) for v ∈ s if !isequal(v, best)]
     remove!(s, findall(v->!isequal(v, best), s.vertices))
     push!(s, newvertices...)
     sort!(s, by=v->value(v))
@@ -154,7 +145,7 @@ function optimise(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real,
       worst = worstvertex(s)
       secondworst = secondworstvertex(s)
       centroid = findcentroid(f, s)
-      reflected = reflect(centroid, worst)
+      reflected = Vertex(centroid + α * (centroid - worst), f)
 
       if any(h->isequal(h, reflected), history)
         returncode = :ENDLESS_LOOP
@@ -166,14 +157,14 @@ function optimise(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real,
       if best <= reflected < secondworst
         swapworst!(s, reflected)
       elseif reflected < best
-        expanded = expand(centroid, reflected)
+        expanded = Vertex(centroid - γ * (centroid - reflected), f)
         expanded < reflected && swapworst!(s, expanded)
         expanded >= reflected && swapworst!(s, reflected)
       elseif secondworst <= reflected < worst
-        contracted = contract(centroid, reflected)
+        contracted = Vertex(centroid - β * (centroid - reflected), f)
         contracted <= reflected ? swapworst!(s, contracted) : shrink!(s)
       elseif reflected >= worst
-        contracted = contract(centroid, worst)
+        contracted = Vertex(centroid - β * (centroid - worst), f)
         contracted < worst ? swapworst!(s, contracted) : shrink!(s)
       end
       returncode = assessconvergence(s,
