@@ -60,11 +60,9 @@ bestvertex(s::Simplex) = getvertex(s, 1)
 worstvertex(s::Simplex) = getvertex(s, length(s))
 secondworstvertex(s::Simplex) = getvertex(s, length(s)-1)
 
-function findcentroid(f::T, s::Simplex) where {T<:Function}
-  worst = worstvertex(s)
-  g(v) = ≡(v, worst) ? zero(position(v)) : position(v)
-  x = mapreduce(g, +, s) / (length(s) - 1)
-  return Vertex(x, f(x))
+function centroidposition(s::Simplex)
+  g(v) = ≡(v, worstvertex(s)) ? zero(position(v)) : position(v)
+  return mapreduce(g, +, s) / (length(s) - 1)
 end
 function swapworst!(s::Simplex, forthis::Vertex)
   lengthbefore = length(s)

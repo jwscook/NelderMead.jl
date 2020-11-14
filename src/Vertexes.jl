@@ -5,6 +5,7 @@ end
 Vertex(x::AbstractVector{T}, f::F) where {T, F<:Function} = Vertex(x, f(x))
 value(v::Vertex) = v.value
 position(v::Vertex) = v.position
+newposition(a::Vertex, ϵ::Number, b::Vertex) = a + ϵ * (a - b)
 
 # must explicitly use <= and >= because == can't overridden and will
 # be used in conjunction with < to create a <=
@@ -13,7 +14,6 @@ Base.isless(a::Vertex, b::Vertex) = value(a) < value(b)
 Base.:<=(a::Vertex, b::Vertex) = value(a) <= value(b)
 Base.:>=(a::Vertex, b::Vertex) = value(a) >= value(b)
 Base.:+(a::Vertex, b) = position(a) .+ b
-Base.:-(a::Vertex, b) = position(a) .- b
 Base.:-(a::Vertex, b::Vertex) = position(a) .- position(b)
 function Base.isequal(a::Vertex, b::Vertex)
   values_equal = value(a) == value(b) || (isnan(a) && isnan(b))
