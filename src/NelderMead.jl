@@ -11,7 +11,7 @@ Find minimum of function, `f`, first creating a Simplex from vertices at
 """
 function optimise(f::T, initial_vertex_positions::U; kwargs...
    ) where {T<:Function, W<:Number, V<:AbstractVector{W}, U<:AbstractVector{V}}
-  return optimise(f, Simplex(f, initial_vertex_positions); kwargs...)
+  return optimise!(Simplex(f, initial_vertex_positions), f; kwargs...)
 end
 
 """
@@ -24,7 +24,7 @@ that point in all directions, and options passed in via kwargs.
 function optimise(f::T, initial_position::AbstractVector{U},
                initial_step::AbstractVector{V}; kwargs...
                ) where {T<:Function, U<:Number, V<:Number}
-  return optimise(f, Simplex(f, initial_position, initial_step); kwargs...)
+  return optimise!(Simplex(f, initial_position, initial_step), f; kwargs...)
 end
 
 """
@@ -75,12 +75,12 @@ function optimise(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
   totaltime += @elapsed generatesimplices!(simplices, 1)
   totaltime += @elapsed generatesimplices!(simplices, -1)
   @assert length(simplices) == 2 * prod(gridsize)
-  totaltime += @elapsed solutions = map(s->optimise(f, s; kwargs...), collect(simplices))
+  totaltime += @elapsed solutions = map(s->optimise!(s, f; kwargs...), collect(simplices))
   return solutions
 end
 
 """
-    optimise(f, s; kwargs...)
+    optimise!(s, f; kwargs...)
 
 Find minimum of function, `f`, starting from Simplex, `s`, with options
 passed in via kwargs.
@@ -104,7 +104,7 @@ algorithm
 -  γ (default 2): Expansion factor
 -  δ (default 0.5): Shrinkage factor
 """
-function optimise(f::F, s::Simplex{T,U}; kwargs...) where {F<:Function, T<:Real, U}
+function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real, U}
   kwargs = Dict(kwargs)
   stopval = get(kwargs, :stopval, sqrt(eps()))
   xtol_abs = get(kwargs, :xtol_abs, zeros(T)) .* ones(Bool, dimensionality(s))
