@@ -149,8 +149,7 @@ function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real
       best = bestvertex(s)
       worst = worstvertex(s)
       secondworst = secondworstvertex(s)
-      centroid = Vertex(centroidposition(s), f)
-      reflected = reflect(centroid, worst)
+      reflected = reflect(centroidposition(s), worst)
 
       if any(h->isequal(h, reflected), history)
         returncode = :ENDLESS_LOOP
@@ -161,16 +160,19 @@ function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real
 
       if best <= reflected < secondworst
         swapworst!(s, reflected)
-      elseif reflected < best
-        expanded = expand(centroid, reflected)
-        expanded < reflected && swapworst!(s, expanded)
-        expanded >= reflected && swapworst!(s, reflected)
-      elseif secondworst <= reflected < worst
-        contracted = contract(centroid, reflected)
-        contracted <= reflected ? swapworst!(s, contracted) : shrink!(s)
-      elseif reflected >= worst
-        contracted = contract(centroid, worst)
-        contracted < worst ? swapworst!(s, contracted) : shrink!(s)
+      else
+        centroid = Vertex(centroidposition(s), f)
+        if reflected < best
+          expanded = expand(centroid, reflected)
+          expanded < reflected && swapworst!(s, expanded)
+          expanded >= reflected && swapworst!(s, reflected)
+        elseif secondworst <= reflected < worst
+          contracted = contract(centroid, reflected)
+          contracted <= reflected ? swapworst!(s, contracted) : shrink!(s)
+        elseif reflected >= worst
+          contracted = contract(centroid, worst)
+          contracted < worst ? swapworst!(s, contracted) : shrink!(s)
+        end
       end
       returncode = assessconvergence(s,
         xtol_abs, xtol_rel, ftol_abs, ftol_rel, stopval)
