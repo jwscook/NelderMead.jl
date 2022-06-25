@@ -40,9 +40,13 @@ Random.seed!(0)
       for N ∈ 1:3
         gridsize = [rand(1:3) for i ∈ 1:N]
         solutions = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
-                                    stopval=stopval, maxiters=100_000)
+           stopval=stopval, maxiters=100_000)
         @assert length(solutions) >= 1
         test_solution.(solutions, N)
+
+        solution = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
+          stepsize=0.1, stopval=stopval, maxiters=100_000)
+        test_solution(solution, N)
       end
     end
     @testset "Errors are caught" begin

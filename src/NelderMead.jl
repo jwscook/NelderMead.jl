@@ -30,9 +30,16 @@ end
 """
     optimise(f, lower, upper, gridsize; kwargs...)
 
-Find minimum of function, `f`, first creating a `2 .* prod(gridsize)` Simplices
-within a hyper-rectangle spanning from `lower` to `upper`, and
-options passed in via kwargs.
+Find minimum of function, `f` first by evaluating f on a grid between
+`lower` and `upper` of dimensions `gridsize` then if:
+ - `stepsize` is passed as a kwarg then a simplex is created at minimum
+of the grid and the Nelder-Mead algorithm begins from there. This method
+is better for expensive functions and when only one optimum is required.
+else:
+ - `2 .* prod(gridsize)` Simplices within a hyper-rectangle
+spanning from `lower` to `upper` are created and the Nelder-Mead algorithm
+begins for each one. This is better for cheap functions where multiple
+local minimum are required.
 """
 function optimise(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
     gridsize::AbstractVector{<:Integer}; kwargs...) where {F<:Function, T<:Number}
@@ -54,29 +61,35 @@ function optimise(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
     x = index2position(index)
     index2values[index] = f(x)
   end
-  U = typeof(first(index2values)[2])
-  simplices = Set{Simplex{T, U}}()
-  function generatesimplices!(simplices, direction)
-    for ii ∈ CartesianIndices(Tuple(((gridsize .+ 1) .* ones(Int, dim))))
-      vertices = Vector{Vertex{T, U}}()
-      index = collect(Tuple(ii))
-      for i ∈ 1:dim + 1
-        vertexindex = [index[j] + ((j == i) ? direction : 0) for j ∈ 1:dim]
-        all(1 .<= vertexindex .<= gridsize .+ 1) || continue
-        vertex = Vertex{T, U}(index2position(vertexindex),
-                              index2values[vertexindex])
-        push!(vertices, vertex)
+  if haskey(kwargs, :stepsize)
+    (indmin, valmin) = findmin(values, index2values)
+    return optimise!(Simplex(f, index2position(indmin), kwargs[:stepsize]), f;
+      kwargs...)
+  else
+    U = typeof(first(index2values)[2])
+    simplices = Set{Simplex{T, U}}()
+    function generatesimplices!(simplices, direction)
+      for ii ∈ CartesianIndices(Tuple(((gridsize .+ 1) .* ones(Int, dim))))
+        vertices = Vector{Vertex{T, U}}()
+        index = collect(Tuple(ii))
+        for i ∈ 1:dim + 1
+          vertexindex = [index[j] + ((j == i) ? direction : 0) for j ∈ 1:dim]
+          all(1 .<= vertexindex .<= gridsize .+ 1) || continue
+          vertex = Vertex{T, U}(index2position(vertexindex),
+                                index2values[vertexindex])
+          push!(vertices, vertex)
+        end
+        length(vertices) != dim + 1 && continue
+        push!(simplices, Simplex(vertices))
       end
-      length(vertices) != dim + 1 && continue
-      push!(simplices, Simplex(vertices))
     end
-  end
 
-  totaltime += @elapsed generatesimplices!(simplices, 1)
-  totaltime += @elapsed generatesimplices!(simplices, -1)
-  @assert length(simplices) == 2 * prod(gridsize)
-  totaltime += @elapsed solutions = map(s->optimise!(s, f; kwargs...), collect(simplices))
-  return solutions
+    totaltime += @elapsed generatesimplices!(simplices, 1)
+    totaltime += @elapsed generatesimplices!(simplices, -1)
+    @assert length(simplices) == 2 * prod(gridsize)
+    totaltime += @elapsed solutions = map(s->optimise!(s, f; kwargs...), collect(simplices))
+    return solutions
+  end
 end
 
 """
