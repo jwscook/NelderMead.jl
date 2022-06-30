@@ -61,6 +61,10 @@ Random.seed!(0)
                                                   rand(2), [1, 2, 3])
       @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(2),
                                                   rand(2), [0, 0])
+      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), ones(2),
+                                                  zeros(2), [2, 2])
+      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), ones(4),
+                                                  zeros(2), [2, 2])
     end
 
     @testset "Stretched grid causes endless loop" begin
