@@ -38,7 +38,7 @@ Random.seed!(0)
     end
     @testset "Grid optimise" begin
       for N ∈ 1:3
-        gridsize = [rand(1:3) for i ∈ 1:N]
+        gridsize = [rand(2:4) for i ∈ 1:N]
         solutions = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
            stopval=stopval, maxiters=100_000)
         @assert length(solutions) >= 1
