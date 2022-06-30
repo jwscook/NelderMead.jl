@@ -63,7 +63,6 @@ function optimise(f::F, lower::Container, upper::Container,
     inds2vals[index] = f(x)
   end
   if haskey(kwargs, :stepsize)
-    (_, indmin) = findmin(values, inds2vals)
     indmin = reduce((a, b)->inds2vals[a] <= inds2vals[b] ? a : b, keys(inds2vals))
     return optimise!(Simplex(f, inds2positions(indmin), kwargs[:stepsize]), f;
       kwargs...)
