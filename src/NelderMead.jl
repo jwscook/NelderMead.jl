@@ -55,20 +55,21 @@ function optimise(f::F, lower::Container, upper::Container,
   end
 
   dim = length(lower)
-  index2position(i) = (i .- 1) ./ (gridsize .- 1) .* (upper .- lower) .+ lower
-  index2values = Dict()
+  inds2positions(i) = (i .- 1) ./ (gridsize .- 1) .* (upper .- lower) .+ lower
+  inds2vals = Dict()
   totaltime = @elapsed for ii ∈ CartesianIndices(Tuple(gridsize))
     index = collect(Tuple(ii))
-    x = index2position(index)
-    index2values[index] = f(x)
+    x = inds2positions(index)
+    inds2vals[index] = f(x)
   end
   if haskey(kwargs, :stepsize)
-    (_, indmin) = findmin(values, index2values)
-    return optimise!(Simplex(f, index2position(indmin), kwargs[:stepsize]), f;
+    (_, indmin) = findmin(values, inds2vals)
+    indmin = reduce((a, b)->inds2vals[a] <= inds2vals[b] ? a : b, keys(inds2vals))
+    return optimise!(Simplex(f, inds2positions(indmin), kwargs[:stepsize]), f;
       kwargs...)
   else
     T = eltype(lower)
-    U = typeof(first(index2values)[2])
+    U = typeof(first(inds2vals)[2])
     simplices = Set{Simplex{T, U}}()
     function generatesimplices!(simplices, direction)
       for ii ∈ CartesianIndices(Tuple(((gridsize) .* ones(Int, dim))))
@@ -77,8 +78,8 @@ function optimise(f::F, lower::Container, upper::Container,
         for i ∈ 1:dim + 1
           vertexindex = [index[j] + ((j == i) ? direction : 0) for j ∈ 1:dim]
           all(1 .<= vertexindex .<= gridsize) || continue
-          vertex = Vertex{T, U}(index2position(vertexindex),
-                                index2values[vertexindex])
+          vertex = Vertex{T, U}(inds2positions(vertexindex),
+                                inds2vals[vertexindex])
           push!(vertices, vertex)
         end
         length(vertices) != dim + 1 && continue
