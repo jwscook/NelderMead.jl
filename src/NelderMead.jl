@@ -3,6 +3,8 @@ module NelderMead
 include("Vertexes.jl")
 include("Simplexes.jl")
 
+const Container = Union{AbstractVector, Tuple}
+
 """
     optimise(f, initial_vertex_positions; kwargs...)
 
@@ -21,23 +23,29 @@ Find minimum of function, `f`, first creating a Simplex using a starting
 vertex position, `initial_position`, and other vertices `initial_step` away from
 that point in all directions, and options passed in via kwargs.
 """
-function optimise(f::T, initial_position::AbstractVector{U},
-               initial_step::AbstractVector{V}; kwargs...
-               ) where {T<:Function, U<:Number, V<:Number}
+function optimise(f::T, initial_position::Container, initial_step::Container;
+    kwargs...) where {T<:Function}
   return optimise!(Simplex(f, initial_position, initial_step), f; kwargs...)
 end
 
 """
     optimise(f, lower, upper, gridsize; kwargs...)
 
-Find minimum of function, `f`, first creating a `2 .* prod(gridsize)` Simplices
-within a hyper-rectangle spanning from `lower` to `upper`, and
-options passed in via kwargs.
+Find minimum of function, `f` first by evaluating f on a grid between
+`lower` and `upper` of dimensions `gridsize` then if:
+ - `stepsize` is passed as a kwarg then a simplex is created at minimum
+of the grid and the Nelder-Mead algorithm begins from there. This method
+is better for expensive functions and when only one optimum is required.
+else:
+ - `2 .* prod(gridsize)` Simplices within a hyper-rectangle
+spanning from `lower` to `upper` are created and the Nelder-Mead algorithm
+begins for each one. This is better for cheap functions where multiple
+local minimum are required.
 """
-function optimise(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
-    gridsize::AbstractVector{<:Integer}; kwargs...) where {F<:Function, T<:Number}
+function optimise(f::F, lower::Container, upper::Container,
+    gridsize::AbstractVector{<:Integer}; kwargs...) where {F<:Function}
 
-  all(gridsize .> 0) || throw(ArgumentError("gridsize, $gridsize, must .> 0"))
+  all(gridsize .> 1) || throw(ArgumentError("gridsize, $gridsize, must .> 1"))
   if !(length(lower) == length(upper) == length(gridsize))
     throw(ArgumentError("The lengths of lower $lower, upper $upper, and
                         gridsize $gridsize must be the same"))
@@ -47,36 +55,43 @@ function optimise(f::F, lower::AbstractVector{T}, upper::AbstractVector{T},
   end
 
   dim = length(lower)
-  index2position(i) = (i .- 1) ./ gridsize .* (upper .- lower) .+ lower
-  index2values = Dict()
-  totaltime = @elapsed for ii ∈ CartesianIndices(Tuple(gridsize .+ 1))
+  inds2positions(i) = (i .- 1) ./ (gridsize .- 1) .* (upper .- lower) .+ lower
+  inds2vals = Dict()
+  totaltime = @elapsed for ii ∈ CartesianIndices(Tuple(gridsize))
     index = collect(Tuple(ii))
-    x = index2position(index)
-    index2values[index] = f(x)
+    x = inds2positions(index)
+    inds2vals[index] = f(x)
   end
-  U = typeof(first(index2values)[2])
-  simplices = Set{Simplex{T, U}}()
-  function generatesimplices!(simplices, direction)
-    for ii ∈ CartesianIndices(Tuple(((gridsize .+ 1) .* ones(Int, dim))))
-      vertices = Vector{Vertex{T, U}}()
-      index = collect(Tuple(ii))
-      for i ∈ 1:dim + 1
-        vertexindex = [index[j] + ((j == i) ? direction : 0) for j ∈ 1:dim]
-        all(1 .<= vertexindex .<= gridsize .+ 1) || continue
-        vertex = Vertex{T, U}(index2position(vertexindex),
-                              index2values[vertexindex])
-        push!(vertices, vertex)
+  if haskey(kwargs, :stepsize)
+    indmin = reduce((a, b)->inds2vals[a] <= inds2vals[b] ? a : b, keys(inds2vals))
+    return optimise!(Simplex(f, inds2positions(indmin), kwargs[:stepsize]), f;
+      kwargs...)
+  else
+    T = eltype(lower)
+    U = typeof(first(inds2vals)[2])
+    simplices = Set{Simplex{T, U}}()
+    function generatesimplices!(simplices, direction)
+      for ii ∈ CartesianIndices(Tuple(((gridsize) .* ones(Int, dim))))
+        vertices = Vector{Vertex{T, U}}()
+        index = collect(Tuple(ii))
+        for i ∈ 1:dim + 1
+          vertexindex = [index[j] + ((j == i) ? direction : 0) for j ∈ 1:dim]
+          all(1 .<= vertexindex .<= gridsize) || continue
+          vertex = Vertex{T, U}(inds2positions(vertexindex),
+                                inds2vals[vertexindex])
+          push!(vertices, vertex)
+        end
+        length(vertices) != dim + 1 && continue
+        push!(simplices, Simplex(vertices))
       end
-      length(vertices) != dim + 1 && continue
-      push!(simplices, Simplex(vertices))
     end
-  end
 
-  totaltime += @elapsed generatesimplices!(simplices, 1)
-  totaltime += @elapsed generatesimplices!(simplices, -1)
-  @assert length(simplices) == 2 * prod(gridsize)
-  totaltime += @elapsed solutions = map(s->optimise!(s, f; kwargs...), collect(simplices))
-  return solutions
+    totaltime += @elapsed generatesimplices!(simplices, 1)
+    totaltime += @elapsed generatesimplices!(simplices, -1)
+    @assert length(simplices) == 2 * prod(gridsize .- 1)
+    totaltime += @elapsed solutions = map(s->optimise!(s, f; kwargs...), collect(simplices))
+    return solutions
+  end
 end
 
 """
