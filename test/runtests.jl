@@ -36,35 +36,13 @@ Random.seed!(0)
         test_solution(solution, N)
       end
     end
-    @testset "Grid optimise" begin
-      for N ∈ 1:3
-        gridsize = [rand(2:4) for i ∈ 1:N]
-        solutions = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
-           stopval=stopval, maxiters=100_000)
-        @assert length(solutions) >= 1
-        test_solution.(solutions, N)
 
-        solution = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
-          stepsize=0.1, stopval=stopval, maxiters=100_000)
-        test_solution(solution, N)
-      end
-    end
     @testset "Errors are caught" begin
       N = 2
       @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), [rand(1),
                                                   rand(2), rand(3)])
       @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(2),
                                                   rand(3))
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), [0.0],
-                                                  [0.0], [1])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(1),
-                                                  rand(2), [1, 2, 3])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(2),
-                                                  rand(2), [0, 0])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), ones(2),
-                                                  zeros(2), [2, 2])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), ones(4),
-                                                  zeros(2), [2, 2])
     end
 
     @testset "Stretched grid causes endless loop" begin
