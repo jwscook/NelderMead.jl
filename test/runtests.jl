@@ -1,4 +1,5 @@
 using Random, NelderMead, Test
+import NelderMead: Vertex, Simplex
 
 Random.seed!(0)
 
@@ -36,35 +37,13 @@ Random.seed!(0)
         test_solution(solution, N)
       end
     end
-    @testset "Grid optimise" begin
-      for N ∈ 1:3
-        gridsize = [rand(2:4) for i ∈ 1:N]
-        solutions = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
-           stopval=stopval, maxiters=100_000)
-        @assert length(solutions) >= 1
-        test_solution.(solutions, N)
 
-        solution = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N), gridsize,
-          stepsize=0.1, stopval=stopval, maxiters=100_000)
-        test_solution(solution, N)
-      end
-    end
     @testset "Errors are caught" begin
       N = 2
       @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), [rand(1),
                                                   rand(2), rand(3)])
       @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(2),
                                                   rand(3))
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), [0.0],
-                                                  [0.0], [1])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(1),
-                                                  rand(2), [1, 2, 3])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), rand(2),
-                                                  rand(2), [0, 0])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), ones(2),
-                                                  zeros(2), [2, 2])
-      @test_throws ArgumentError NelderMead.optimise(x->objective(x, N), ones(4),
-                                                  zeros(2), [2, 2])
     end
 
     @testset "Stretched grid causes endless loop" begin
@@ -90,6 +69,31 @@ Random.seed!(0)
                                   maxiters=1000, xtol_rel=2eps())
       _, _, returncode, numiters = solution
       @test returncode == :ENDLESS_LOOP
+    end
+
+    @testset "hash, isequal, ==" begin
+      v0 = Vertex([0.0], 0)
+      v1 = Vertex([1.0], 1)
+      @test !(v0 == v1)
+      @test !isequal(v0, v1)
+      @test hash(v0) != hash(v1)
+      s01 = Simplex([v0, v1])
+      @test s01 == s01
+      @test isequal(s01, s01)
+      @test hash(s01) == hash(s01)
+      v2 = deepcopy(v1)
+      v2.position[1] += rand()
+      @test v1 != v2
+      @test !(v1 == v2)
+      @test hash(v1) != hash(v2)
+      s02 = deepcopy(s01)
+      v1.position[1] += rand()
+      @test !(s02 == s01)
+      @test hash(s02) != hash(s01)
+      v3 = NelderMead.Vertex([1.0], 2)
+      @test Simplex([v0, v1]) != Simplex([v0, v3])
+      @test !isequal(Simplex([v0, v1]), Simplex([v0, v3]))
+      @test hash(Simplex([v0, v1])) != hash(Simplex([v0, v3]))
     end
 
   end

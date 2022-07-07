@@ -32,10 +32,6 @@ function Simplex(f::T, positions::U
   map(i->push!(vertices, Vertex(positions[i], f(positions[i]))), 2:dim+1)
   return Simplex(vertices)
 end
-function Simplex(f::T, ic::AbstractVector{U}, initial_step::Number
-    ) where {T<:Function, U<:Number}
-  return Simplex(f, ic, [initial_step for _ in eachindex(ic)])
-end
 
 import Base: length, iterate, push!, iterate, getindex
 import Base: eachindex, sort!, hash
