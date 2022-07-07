@@ -1,4 +1,5 @@
 using Random, NelderMead, Test
+import NelderMead: Vertex, Simplex
 
 Random.seed!(0)
 
@@ -68,6 +69,31 @@ Random.seed!(0)
                                   maxiters=1000, xtol_rel=2eps())
       _, _, returncode, numiters = solution
       @test returncode == :ENDLESS_LOOP
+    end
+
+    @testset "hash, isequal, ==" begin
+      v0 = Vertex([0.0], 0)
+      v1 = Vertex([1.0], 1)
+      @test !(v0 == v1)
+      @test !isequal(v0, v1)
+      @test hash(v0) != hash(v1)
+      s01 = Simplex([v0, v1])
+      @test s01 == s01
+      @test isequal(s01, s01)
+      @test hash(s01) == hash(s01)
+      v2 = deepcopy(v1)
+      v2.position[1] += rand()
+      @test v1 != v2
+      @test !(v1 == v2)
+      @test hash(v1) != hash(v2)
+      s02 = deepcopy(s01)
+      v1.position[1] += rand()
+      @test !(s02 == s01)
+      @test hash(s02) != hash(s01)
+      v3 = NelderMead.Vertex([1.0], 2)
+      @test Simplex([v0, v1]) != Simplex([v0, v3])
+      @test !isequal(Simplex([v0, v1]), Simplex([v0, v3]))
+      @test hash(Simplex([v0, v1])) != hash(Simplex([v0, v3]))
     end
 
   end
