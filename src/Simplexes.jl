@@ -86,7 +86,7 @@ function assessconvergence(simplex, xtol_abs, xtol_rel, ftol_abs, ftol_rel, stop
       allxtol &= thisxtol
     end
   end
-  allxtol && return :FTOL_REACHED
+  allxtol && return :XTOL_REACHED
 
   allftol = true
   for (vi, v) ∈ enumerate(simplex)
