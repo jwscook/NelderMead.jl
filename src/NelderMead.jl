@@ -130,7 +130,7 @@ function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real
 
   iters == maxiters && (returncode = :MAXITERS_REACHED)
   best = bestvertex(s)
-  return value(best), position(best), returncode, iters
+  return value(best), position(best), returncode, iters, s
 end # optimise
 
 end

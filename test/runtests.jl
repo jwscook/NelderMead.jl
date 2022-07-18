@@ -12,7 +12,7 @@ Random.seed!(0)
     end
 
     function test_solution(solution, N)
-      minimum, minimiser, returncode, numiters = solution
+      minimum, minimiser, returncode, numiters, simplex = solution
 
       @test minimum <= stopval
       @test isapprox(ones(N), minimiser, rtol=1.0e-6)
@@ -54,7 +54,7 @@ Random.seed!(0)
       end
       solution = NelderMead.optimise(stretchedobjective, zeros(N), ones(N),
                                   maxiters=1000, xtol_rel=2eps())
-      _, _, returncode, numiters = solution
+      _, _, returncode, numiters, _ = solution
       @test returncode == :ENDLESS_LOOP
     end
 
@@ -67,7 +67,7 @@ Random.seed!(0)
       end
       solution = NelderMead.optimise(nanobjective, zeros(N), ones(N) / 2,
                                   maxiters=1000, xtol_rel=2eps())
-      _, _, returncode, numiters = solution
+      _, _, returncode, numiters, _ = solution
       @test returncode == :ENDLESS_LOOP
     end
 
