@@ -1,5 +1,6 @@
 ![CI](https://github.com/jwscook/NelderMead.jl/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/jwscook/NelderMead.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jwscook/NelderMead.jl)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://jwscook.github.io/NelderMead.jl/dev/)
 
 # NelderMead.jl
 
