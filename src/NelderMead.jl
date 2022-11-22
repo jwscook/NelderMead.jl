@@ -1,9 +1,9 @@
 module NelderMead
 
+const Container = Union{AbstractVector, Tuple}
+
 include("Vertexes.jl")
 include("Simplexes.jl")
-
-const Container = Union{AbstractVector, Tuple}
 
 """
     optimise(f, initial_vertex_positions; kwargs...)
@@ -23,7 +23,7 @@ Find minimum of function, `f`, first creating a Simplex using a starting
 vertex position, `initial_position`, and other vertices `initial_step` away from
 that point in all directions, and options passed in via kwargs.
 """
-function optimise(f::T, initial_position::Container, initial_step::Container;
+function optimise(f::T, initial_position::Container, initial_step;
     kwargs...) where {T<:Function}
   return optimise!(Simplex(f, initial_position, initial_step), f; kwargs...)
 end

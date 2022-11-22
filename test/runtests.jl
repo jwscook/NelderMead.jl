@@ -17,6 +17,7 @@ Random.seed!(0)
       @test minimum <= stopval
       @test isapprox(ones(N), minimiser, rtol=1.0e-6)
       @test returncode == :STOPVAL_REACHED
+      return minimum <= stopval
     end
 
     stopval = eps()
@@ -26,16 +27,20 @@ Random.seed!(0)
     @testset "Single optimise - initial position and simplex size" begin
       for N ∈ 1:10
         solution = NelderMead.optimise(x->objective(x, N), zeros(N), ones(N),
-                                      stopval=stopval, maxiters=100_000)
+          stopval=stopval, maxiters=100_000)
         test_solution(solution, N)
       end
     end
     @testset "Single optimise - vertex locations" begin
-      for N ∈ 1:10
-        solution = NelderMead.optimise(x->objective(x, N), [rand(N) for i ∈ 1:N+1],
-                                    stopval=stopval, maxiters=100_000)
-        test_solution(solution, N)
+      for N ∈ 1:5
+        for args ∈ ((rand(N), 1 .+ rand(N)), (rand(N), rand()),
+                    ([rand(N) for _ ∈ 0:N],))
+          solution = NelderMead.optimise(x->objective(x, N), args...,
+            stopval=stopval, maxiters=100_000, ftol_abs=0)
+          test_solution(solution, N) || @show args
+        end
       end
+
     end
 
     @testset "Errors are caught" begin

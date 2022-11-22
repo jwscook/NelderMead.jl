@@ -5,22 +5,29 @@ struct Simplex{T<:Number, U}
     return new{T,U}(vertices)
   end
 end
-function Simplex(f::T, ic::AbstractVector{U}, initial_step::AbstractVector{V}
-    ) where {T<:Function, U<:Number, V<:Number}
+
+function Simplex(f::T, ic::Container, initial_step::Number
+    ) where {T<:Function}
+  return Simplex(f, ic, Tuple(initial_step for _ ∈ 1:length(ic)))
+end
+
+function Simplex(f::T, ic::Container, initial_step::Container
+    ) where {T<:Function}
+  U = eltype(ic)
+  V = eltype(initial_step)
   if length(ic) != length(initial_step)
     throw(ArgumentError("ic, $ic must be same length as initial_step
                         $initial_step"))
   end
   dim = length(ic)
-  positions = Vector{Vector{promote_type(U,V)}}()
+  positions = Vector{Vector{promote_type(U, V)}}()
   for i ∈ 1:dim+1
     x = [ic[j] + ((j == i) ? initial_step[j] : zero(V)) for j ∈ 1:dim]
     push!(positions, x)
   end
   return Simplex(f, positions)
 end
-function Simplex(f::T, positions::U
-    ) where {T<:Function, W<:Number, V<:AbstractVector{W}, U<:AbstractVector{V}}
+function Simplex(f::T, positions) where {T<:Function}
   if length(unique(length.(positions))) != 1
     throw(ArgumentError("All entries in positions $positions must be the same
                         length"))
