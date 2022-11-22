@@ -12,7 +12,7 @@ Random.seed!(0)
     end
 
     function test_solution(solution, N)
-      minimum, minimiser, returncode, numiters, simplex = solution
+      minimiser, minimum, returncode, numiters, simplex = solution
 
       @test minimum <= stopval
       @test isapprox(ones(N), minimiser, rtol=1.0e-6)
