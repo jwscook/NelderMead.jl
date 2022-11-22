@@ -1,9 +1,9 @@
 module NelderMead
 
+const Container = Union{AbstractVector, Tuple}
+
 include("Vertexes.jl")
 include("Simplexes.jl")
-
-const Container = Union{AbstractVector, Tuple}
 
 """
     optimise(f, initial_vertex_positions; kwargs...)
@@ -23,7 +23,7 @@ Find minimum of function, `f`, first creating a Simplex using a starting
 vertex position, `initial_position`, and other vertices `initial_step` away from
 that point in all directions, and options passed in via kwargs.
 """
-function optimise(f::T, initial_position::Container, initial_step::Container;
+function optimise(f::T, initial_position::Container, initial_step;
     kwargs...) where {T<:Function}
   return optimise!(Simplex(f, initial_position, initial_step), f; kwargs...)
 end
@@ -35,7 +35,7 @@ Find minimum of function, `f`, starting from Simplex, `s`, with options
 passed in via kwargs.
 
 # Keyword Arguments
--  stopval (default sqrt(eps())): stopping criterion when function evaluates
+-  stopval (default -Inf): stopping criterion when function evaluates
 equal to or less than stopval
 -  xtol_abs (default zeros(T)) .* ones(Bool, dimensionality(s)): stop if
 the vertices of simplex get within this absolute tolerance
@@ -52,10 +52,18 @@ algorithm
 -  β (default 0.5): Contraction factor
 -  γ (default 2): Expansion factor
 -  δ (default 0.5): Shrinkage factor
+
+# Returns
+`optimise` returns a tuple consisting of:
+- minimiser: the location of the minimum
+- minimumvalue: the value at the minimum
+- returncode: the return code symbol
+- numiters: the number of iterations taken
+- simplex: the simplex in its final state (useful for restarting)
 """
 function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real, U}
   kwargs = Dict(kwargs)
-  stopval = get(kwargs, :stopval, sqrt(eps()))
+  stopval = get(kwargs, :stopval, -T(Inf))
   xtol_abs = get(kwargs, :xtol_abs, zeros(T)) .* ones(Bool, dimensionality(s))
   xtol_rel = get(kwargs, :xtol_rel, eps(T)) .* ones(Bool, dimensionality(s))
   ftol_abs = get(kwargs, :ftol_abs, zero(real(U)))
@@ -130,7 +138,7 @@ function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real
 
   iters == maxiters && (returncode = :MAXITERS_REACHED)
   best = bestvertex(s)
-  return value(best), position(best), returncode, iters, s
+  return (position(best), value(best), returncode, iters, s)
 end # optimise
 
 end
