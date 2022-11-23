@@ -19,7 +19,7 @@ function rosenbrock(x)
 end
 
 result = NelderMead.optimise(rosenbrock, zeros(3), ones(3) ./ 10)
-minvalue, position, returncode, iters, simplex = result
+position, minvalue, returncode, iters, simplex = result
 
 fig, ax, scat = scatter(0 .* xs .+ 1.2, ys, zs, color=:grey, alpha=0.5,
                         axis=(;type=Axis3))
