@@ -1,8 +1,9 @@
-struct Simplex{T<:Number, U}
-  vertices::Vector{Vertex{T,U}}
-  function Simplex(vertices::Vector{Vertex{T,U}}) where {T<:Number, U}
+struct Simplex{T, U<:Number, V<:AbstractVector{T}}
+  vertices::Vector{Vertex{T,U,V}}
+  function Simplex(vertices::Vector{Vertex{T,U,V}}
+                  ) where {T, U<:Number, V<:AbstractVector}
     sort!(vertices, by=value)
-    return new{T,U}(vertices)
+    return new{T,U,V}(vertices)
   end
 end
 
@@ -107,3 +108,7 @@ function assessconvergence(simplex, xtol_abs, xtol_rel, ftol_abs, ftol_rel, stop
   return :CONTINUE
 end
 
+
+function diagonalpoint(s::Simplex)
+  typeof
+end
