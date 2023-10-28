@@ -108,7 +108,3 @@ function assessconvergence(simplex, xtol_abs, xtol_rel, ftol_abs, ftol_rel, stop
   return :CONTINUE
 end
 
-
-function diagonalpoint(s::Simplex)
-  typeof
-end
