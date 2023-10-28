@@ -1,7 +1,7 @@
-struct Simplex{T, U<:Number, V<:AbstractVector{T}}
+struct Simplex{T<:Number, U, V<:AbstractVector{U}}
   vertices::Vector{Vertex{T,U,V}}
   function Simplex(vertices::Vector{Vertex{T,U,V}}
-                  ) where {T, U<:Number, V<:AbstractVector}
+                  ) where {T<:Number, U, V<:AbstractVector}
     sort!(vertices, by=value)
     return new{T,U,V}(vertices)
   end
