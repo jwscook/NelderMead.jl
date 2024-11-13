@@ -61,7 +61,8 @@ algorithm
 - numiters: the number of iterations taken
 - simplex: the simplex in its final state (useful for restarting)
 """
-function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real, U}
+function optimise!(s::Simplex{T,U,V}, f::F; kwargs...
+                  ) where {F<:Function, T<:Real, U, V}
   kwargs = Dict(kwargs)
   stopval = get(kwargs, :stopval, -T(Inf))
   xtol_abs = get(kwargs, :xtol_abs, zeros(T)) .* ones(Bool, dimensionality(s))
@@ -85,7 +86,7 @@ function optimise!(s::Simplex{T,U}, f::F; kwargs...) where {F<:Function, T<:Real
   contract(this, other) = Vertex(newposition(this, -β, other), f)
   shrink(this, other) = Vertex(newposition(this, δ, other), f)
 
-  function shrink!(s::Simplex)
+  function shrink!(s::Simplex{T,U,V}) where {T,U,V}
     lengthbefore = length(s)
     best = bestvertex(s)
     newvertices = [shrink(best, v) for v ∈ s if !isequal(v, best)]

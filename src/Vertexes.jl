@@ -1,6 +1,6 @@
-struct Vertex{T, U<:Real}
-  position::AbstractVector{T}
-  value::U
+struct Vertex{T<:Number, U, V<:AbstractVector{U}}
+  position::V
+  value::T
 end
 Vertex(x::AbstractVector{T}, f::F) where {T, F<:Function} = Vertex(x, f(x))
 value(v::Vertex) = v.value

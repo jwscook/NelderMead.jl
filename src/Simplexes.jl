@@ -1,8 +1,9 @@
-struct Simplex{T<:Number, U}
-  vertices::Vector{Vertex{T,U}}
-  function Simplex(vertices::Vector{Vertex{T,U}}) where {T<:Number, U}
+struct Simplex{T<:Number, U, V<:AbstractVector{U}}
+  vertices::Vector{Vertex{T,U,V}}
+  function Simplex(vertices::Vector{Vertex{T,U,V}}
+                  ) where {T<:Number, U, V<:AbstractVector}
     sort!(vertices, by=value)
-    return new{T,U}(vertices)
+    return new{T,U,V}(vertices)
   end
 end
 
@@ -22,7 +23,7 @@ function Simplex(f::T, ic::Container, initial_step::Container
   dim = length(ic)
   positions = Vector{Vector{promote_type(U, V)}}()
   for i ∈ 1:dim+1
-    x = [ic[j] + ((j == i) ? initial_step[j] : zero(V)) for j ∈ 1:dim]
+    x = [ic[j] + ((j + 1 == i) ? initial_step[j] : zero(V)) for j ∈ 1:dim]
     push!(positions, x)
   end
   return Simplex(f, positions)

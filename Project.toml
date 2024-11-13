@@ -1,7 +1,7 @@
 name = "NelderMead"
 uuid = "2f6b4ddb-b4ff-44c0-b59b-2ab99302f970"
 authors = ["James Cook <cookjws@gmail.com>"]
-version = "0.4.0"
+version = "0.4.1"
 
 [compat]
 julia = "1"
